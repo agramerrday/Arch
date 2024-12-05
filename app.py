@@ -122,4 +122,38 @@ def main():
                         if result:
                             st.markdown(f'<div class="pass-paper"">太扯！過了！</div>', unsafe_allow_html=True)
                             game_won = True
-                        els
+                        else:
+                            st.markdown(f'<div class="fail-paper">不及格，爛爆！</div>', unsafe_allow_html=True)
+                    else:
+                        # Clickable paper
+                        if st.button(f"試卷 {paper_index + 1}", key=f"paper_{paper_index}"):
+                            # Determine result (10% chance of passing)
+                            result = random.random() < 0.1
+                            
+                            # Update paper state
+                            st.session_state.papers[paper_index]['revealed'] = True
+                            st.session_state.papers[paper_index]['result'] = result
+                            
+                            # Rerun to update display
+                            st.experimental_rerun()
+
+        # Close grid container
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Display result
+    if any(paper['revealed'] for paper in st.session_state.papers):
+        last_revealed_paper = next(
+            paper for paper in reversed(st.session_state.papers) if paper['revealed']
+        )
+        
+        if last_revealed_paper['result']:
+            st.success("🎉 恭喜！你的運氣比實力還好！🎉")
+        else:
+            st.error("💔 哈哈，還是好好念書吧！💔")
+
+    # Reset button
+    if st.button("重新開始"):
+        reset_game()
+
+if __name__ == "__main__":
+    main()
