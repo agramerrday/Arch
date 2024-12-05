@@ -22,7 +22,7 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
-    # Custom CSS for cross-platform consistency
+    # Custom CSS for consistent sizing and cross-platform compatibility
     st.markdown("""
     <style>
     /* Reset Streamlit default styles */
@@ -48,6 +48,15 @@ def main():
         margin: 0 auto !important;
     }
     
+    /* Consistent paper container */
+    .paper-container {
+        height: 100px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 0 !important;
+    }
+    
     /* Paper button styling */
     .stButton > button {
         background-color: #4d4d4d !important;
@@ -68,21 +77,32 @@ def main():
     }
     
     /* Revealed paper styles */
+    .revealed-paper {
+        background-color: #4d4d4d !important;
+        color: white !important;
+        border: 2px solid #666 !important;
+        border-radius: 10px !important;
+        height: 100px !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        font-family: 'Courier New', monospace, sans-serif !important;
+    }
+    
     .pass-paper {
         background-color: #4caf50 !important;
-        color: white !important;
         border: 2px solid #45a049 !important;
     }
     
     .fail-paper {
         background-color: #e74c3c !important;
-        color: white !important;
         border: 2px solid #c0392b !important;
     }
     
     /* Responsive text sizing */
     @media (max-width: 600px) {
-        .stButton > button {
+        .paper-container, .stButton > button, .revealed-paper {
             height: 80px !important;
             font-size: 0.8rem !important;
         }
@@ -115,15 +135,18 @@ def main():
             for col in range(4):
                 paper_index = row * 4 + col
                 with cols[col]:
+                    # Wrap content in a consistent container
+                    st.markdown('<div class="paper-container">', unsafe_allow_html=True)
+                    
                     # Check if paper is already revealed
                     if st.session_state.papers[paper_index]['revealed']:
                         # Show revealed paper
                         result = st.session_state.papers[paper_index]['result']
                         if result:
-                            st.markdown(f'<div class="pass-paper"">太扯！過了！</div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="revealed-paper pass-paper">太扯！過了！</div>', unsafe_allow_html=True)
                             game_won = True
                         else:
-                            st.markdown(f'<div class="fail-paper">不及格，爛爆！</div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="revealed-paper fail-paper">不及格，爛爆！</div>', unsafe_allow_html=True)
                     else:
                         # Clickable paper
                         if st.button(f"試卷 {paper_index + 1}", key=f"paper_{paper_index}"):
@@ -136,6 +159,9 @@ def main():
                             
                             # Rerun to update display
                             st.experimental_rerun()
+                    
+                    # Close paper container
+                    st.markdown('</div>', unsafe_allow_html=True)
 
         # Close grid container
         st.markdown('</div>', unsafe_allow_html=True)
