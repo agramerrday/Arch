@@ -1,107 +1,118 @@
 import streamlit as st
 import random
 
+def init_papers():
+    """Initialize the game state with 16 papers."""
+    if 'papers' not in st.session_state:
+        st.session_state.papers = [
+            {'revealed': False, 'result': None} for _ in range(16)
+        ]
+
+def reset_game():
+    """Reset the game to its initial state."""
+    st.session_state.papers = [
+        {'revealed': False, 'result': None} for _ in range(16)
+    ]
+
 def main():
-    st.set_page_config(page_title="建築師考試術科考試模擬", page_icon="🏛️")
+    st.set_page_config(
+        page_title="靠北建築術科考試模擬",
+        page_icon="👷",
+        initial_sidebar_state="collapsed"
+    )
 
     # Custom CSS for styling
     st.markdown("""
     <style>
     .stApp {
         background-color: #1a1a1a;
-        color: #fff;
+        color: white;
+        font-family: 'Courier New', monospace;
     }
-    h1 {
-        color: #4caf50 !important;
-        text-shadow: 2px 2px 0px #000;
+    .title {
+        color: #e74c3c;
         text-align: center;
     }
     .paper {
         background-color: #4d4d4d;
         border: 2px solid #666;
-        border-radius: 5px;
+        border-radius: 10px;
         height: 100px;
         display: flex;
         justify-content: center;
         align-items: center;
         cursor: pointer;
-        transition: all 0.2s ease;
-        color: #fff;
-        text-shadow: 1px 1px 0px #000;
+        transition: all 0.3s ease;
     }
     .paper:hover {
-        background-color: #5d5d5d;
         transform: scale(1.05);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     }
     .pass {
-        background-color: #4caf50 !important;
-        border-color: #2e7d32 !important;
+        background-color: #4caf50;
+        color: white;
     }
     .fail {
-        background-color: #e74c3c !important;
-        border-color: #c0392b !important;
+        background-color: #e74c3c;
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # Title and instructions
-    st.markdown("<h1>建築師考試術科考試模擬</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #ccc;'>點擊任一試卷來查看你是否通過術科考試！</p>", unsafe_allow_html=True)
+    # Initialize game
+    init_papers()
 
-    # Initialize session state for papers if not already exists
-    if 'papers' not in st.session_state:
-        st.session_state.papers = [{'text': f'試卷 {i+1}', 'passed': None} for i in range(16)]
-        st.session_state.result = ''
+    # Title and description
+    st.markdown("<h1 class='title'>靠北建築術科考試模擬</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #ccc;'>點擊爛爛的試卷，看看你有沒有辦法當上建築師！👷</p>", unsafe_allow_html=True)
 
     # Create a grid of papers
     cols = st.columns(4)
+    
+    # Track if game is won
+    game_won = False
+
+    # Render papers
     for row in range(4):
         for col in range(4):
-            idx = row * 4 + col
-            paper = st.session_state.papers[idx]
-            
+            paper_index = row * 4 + col
             with cols[col]:
-                # Determine button style and text based on paper state
-                if paper['passed'] is None:
-                    button_style = 'paper'
-                    button_text = paper['text']
-                elif paper['passed']:
-                    button_style = 'paper pass'
-                    button_text = '通過'
-                else:
-                    button_style = 'paper fail'
-                    button_text = '未通過'
-                
-                # Create button with custom styling
-                button = st.button(
-                    button_text, 
-                    key=f'paper_{idx}', 
-                    disabled=paper['passed'] is not None,
-                    use_container_width=True,
-                    type='secondary'
-                )
-                
-                # Handle button click
-                if button and paper['passed'] is None:
-                    # 10% chance of passing
-                    is_pass = random.random() < 0.1
-                    st.session_state.papers[idx]['passed'] = is_pass
-                    
-                    # Set result message
-                    if is_pass:
-                        st.session_state.result = '恭喜！你通過了術科考試！🎉'
+                # Check if paper is already revealed
+                if st.session_state.papers[paper_index]['revealed']:
+                    # Show revealed paper
+                    result = st.session_state.papers[paper_index]['result']
+                    if result:
+                        st.markdown(f"<div class='paper pass'>太扯！過了！</div>", unsafe_allow_html=True)
+                        game_won = True
                     else:
-                        st.session_state.result = '很遺憾，你未通過術科考試。'
-    
+                        st.markdown(f"<div class='paper fail'>不及格，爛爆！</div>", unsafe_allow_html=True)
+                else:
+                    # Clickable paper
+                    if st.button(f"試卷 {paper_index + 1}", key=f"paper_{paper_index}"):
+                        # Determine result (10% chance of passing)
+                        result = random.random() < 0.1
+                        
+                        # Update paper state
+                        st.session_state.papers[paper_index]['revealed'] = True
+                        st.session_state.papers[paper_index]['result'] = result
+                        
+                        # Rerun to update display
+                        st.experimental_rerun()
+
     # Display result
-    if st.session_state.result:
-        st.markdown(f"<div style='text-align: center; margin-top: 20px; color: {'#4caf50' if '恭喜' in st.session_state.result else '#e74c3c'}; font-weight: bold;'>{st.session_state.result}</div>", unsafe_allow_html=True)
-    
+    if any(paper['revealed'] for paper in st.session_state.papers):
+        last_revealed_paper = next(
+            paper for paper in reversed(st.session_state.papers) if paper['revealed']
+        )
+        
+        if last_revealed_paper['result']:
+            st.success("🎉 恭喜！你的運氣比實力還好！🎉")
+        else:
+            st.error("💔 哈哈，還是好好念書吧！💔")
+
     # Reset button
-    if st.button('重新開始'):
-        st.session_state.papers = [{'text': f'試卷 {i+1}', 'passed': None} for i in range(16)]
-        st.session_state.result = ''
-        st.experimental_rerun()
+    if st.button("重新開始"):
+        reset_game()
 
 if __name__ == "__main__":
     main()
